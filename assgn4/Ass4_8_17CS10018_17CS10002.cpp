@@ -13,8 +13,20 @@
 #define NUM_PROD 1000
 #define SIGUSR1 101
 #define SIGUSR2 102
+#define RUNNING 0
+#define SLEEPING 1
+#define TERMINATED 2
+#define NOTREADY 4
 
 using namespace std;
+
+struct status
+{
+	pthread_t tid;
+	int present_state;
+	int previous_state;
+
+};
 
 queue<int> shared_buffer;
 pthread_mutex_t lock;
@@ -101,4 +113,8 @@ void sleep_handler(int sig){
 
 void wake_handler(int sig) {
     //();
+}
+
+void *reporter_handle(void *param){
+
 }

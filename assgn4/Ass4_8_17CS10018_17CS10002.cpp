@@ -60,6 +60,7 @@ void *reporter_handle(void *param);
 
 void sleep_handler(int sig);
 void wake_handler(int sig);
+void Increase_term_threads();
 
 int main() {
 
@@ -158,7 +159,7 @@ void *producer(void *param) {
     }
     pthread_mutex_lock(&lock);
     STATUS[pthread_self()].job_done_flag = COMPLETE;			// pushed NUM_PROD numbers. So, its job done
-    term_threads++;
+    Increase_term_threads();
     pthread_mutex_unlock(&lock);
     pthread_kill(scheduler, SIGUSR2);							// killing thread
     pthread_exit(0);
@@ -177,9 +178,11 @@ void *consumer(void *param) {
 
         if(SHARED_BUFFER.empty() && term_threads >= num_p) {	// All producers are terminated and buffer empty. Hence nothing to do
             STATUS[pthread_self()].job_done_flag = COMPLETE;
-            term_threads++;
+            Increase_term_threads();
             pthread_mutex_unlock(&lock2);
             pthread_kill(scheduler, SIGUSR2);
+            cout << term_threads << endl;
+            fflush(stdout);
             pthread_exit(0);
         }
         pthread_mutex_unlock(&lock2);
@@ -190,7 +193,11 @@ void *scheduler_handle(void *param) {
 
     sleep(TIME_SLICE);
     while(1) {
-        if(term_threads == N) pthread_exit(0);
+        if(term_threads >= N) {
+        	cout << "before \n" << endl;
+        	pthread_exit(0);
+
+        }
      
         pthread_mutex_lock(&state_lock);
 
@@ -312,7 +319,7 @@ void *reporter_handle(void *param){
             }
             pthread_mutex_unlock(&state_lock);
         }
-        if(term_threads == N) {														// all threads terminated. So, exit
+        if(term_threads >= N) {														// all threads terminated. So, exit
             pthread_exit(0);
         }
     }
@@ -326,3 +333,22 @@ void wake_handler(int sig) {
     return;
 }
 
+void Increase_term_threads(){
+	if(++term_threads >= N){
+				exit(0);
+			//pthread_cancel(scheduler);
+		//pthread_cancel(reporter);
+while(!SHARED_BUFFER.empty()) SHARED_BUFFER.pop();
+
+	//pthread_exit(0);
+    //pthread_mutex_destroy(&lock);
+    //pthread_mutex_destroy(&lock2);
+    //pthread_mutex_destroy(&state_lock);
+    
+    //cout<<"\nNumber of Producers : "<<num_p<<" ; Number of Consumers :  "<<num_c<<endl;
+    //cout<<"JOBS DONE\nEXITING....\n";
+    //exit(0);
+    //return 0;
+	}
+
+}
